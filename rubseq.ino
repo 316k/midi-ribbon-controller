@@ -2,10 +2,10 @@
 #include <math.h>
 #include "moving_average.h"
 
-#define DEBUG
+// #define DEBUG
 
 #define     FORCE_SENSOR_PIN 0
-#define     POTENTIOMETER_PIN 1
+#define     POTENTIOMETER_PIN 5
 #define 	MIDI_PITCHBEND_MIN   -8192.0
 #define 	MIDI_PITCHBEND_MAX   8191.0
 
@@ -20,6 +20,7 @@ char last_midi_pitch = 0;
 char last_midi_velocity = 0;
 int velocity;
 int potentiometer_reading;
+MovingAverage potentiometer_reading_average;
 char note;
 int pitch;
 char octave = 4;
@@ -39,6 +40,13 @@ void loop() {
     velocity = velocity > 4 ? velocity : 0; // Force sensor uncertainty
 
     potentiometer_reading = analogRead(POTENTIOMETER_PIN);
+
+    if(!potentiometer_reading) {
+        return;
+    }
+
+    potentiometer_reading_average.add(potentiometer_reading);
+    potentiometer_reading = potentiometer_reading_average.average();
 
     note = potentiometer_reading * RANGE / 1023;
     pitch = 127 / 2 * (potentiometer_reading * (RANGE / 1023.0) - note) + 127 / 2;
@@ -88,6 +96,7 @@ void loop() {
         last_midi_note = -1;
         last_midi_velocity = 0;
     }
+
     #ifdef DEBUG
     Serial.print("Playing note #");
     Serial.print((int) last_midi_note);
