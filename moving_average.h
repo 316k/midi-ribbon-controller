@@ -38,7 +38,7 @@ class MovingAverage {
         int max = 0;
         int min = 0;
 
-        for(int i = 0; i < size && values[i] != 0; i++) {
+        for(int i = 0; i < SIZE && values[i] != 0; i++) {
             min = (min == 0 || values[i] < min ? values[i] : min);
             max = (max == 0 || values[i] > max ? values[i] : max);
         }
@@ -77,11 +77,15 @@ class MovingAverage {
      * @return the position at which the value has been added.
      */
     int add(int value) {
-        int i = used_size() - 1;
+        if(!value) {
+            return -1;
+        }
 
-        if(i == size) {
+        int i = used_size();
+
+        if(i == SIZE - 1) {
             // Remove the oldest value and free the last space
-            for(i = 1; i < size && values[i] != 0; i++) {
+            for(i = 1; i < SIZE && values[i] != 0; i++) {
                 values[i-1] = values[i];
             }
         }
@@ -95,18 +99,20 @@ class MovingAverage {
      * Returns the used size (aka. the number of values stored)
      */
     int used_size() {
-        int i;
+        int i = 0;
 
-        for(i = 0; i < size && values[i] != 0; i++);
+        while(i < SIZE && values[i] != 0) {
+            i++;
+        }
 
-        return i + 1;
+        return i;
     }
 
     /**
      * @return the total size available
      */
     int available_size() {
-        return size;
+        return SIZE;
     }
 
     /**
