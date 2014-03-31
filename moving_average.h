@@ -1,7 +1,7 @@
 #ifndef MovingAverage_H
 #define MovingAverage_H
 
-#define SIZE 25
+#define SIZE 4
 
 class MovingAverage {
 
