@@ -83,11 +83,12 @@ class MovingAverage {
 
         int i = used_size();
 
-        if(i == SIZE - 1) {
+        if(i == SIZE) {
             // Remove the oldest value and free the last space
             for(i = 1; i < SIZE && values[i] != 0; i++) {
                 values[i-1] = values[i];
             }
+            i--;
         }
 
         values[i] = value;
