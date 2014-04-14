@@ -9,6 +9,11 @@
 #define 	MIDI_PITCHBEND_MIN   -8192.0
 #define 	MIDI_PITCHBEND_MAX   8191.0
 
+/* If the potentiometer reading is greater than
+ * MovingAverage plus/minus this value, the average is reset
+ */
+#define     PORTAMENTO_TOLERENCE 90
+
 // Number of notes in range
 #define     RANGE       24
 
@@ -24,6 +29,14 @@ MovingAverage potentiometer_reading_average;
 char note;
 int pitch;
 char octave = 4;
+
+/* This is retarded. In theory, we don't need this line of code but
+ * there seems to be a bug in the MIDI library.
+ * Whatever... now it works.
+ */
+void do_stuff_because_midi_lib_is_broken() {
+    MIDI.sendControlChange(0, 0, 1);
+}
 
 void setup() {
     #ifdef DEBUG
@@ -41,8 +54,14 @@ void loop() {
 
     potentiometer_reading = analogRead(POTENTIOMETER_PIN);
 
+    // Zero values aren't welcomed in MovingAverage class
     if(!potentiometer_reading) {
         return;
+    }
+
+    if(potentiometer_reading > potentiometer_reading_average.average() + PORTAMENTO_TOLERENCE ||
+       potentiometer_reading < potentiometer_reading_average.average() - PORTAMENTO_TOLERENCE) {
+        potentiometer_reading_average.reset();
     }
 
     potentiometer_reading_average.add(potentiometer_reading);
@@ -58,11 +77,7 @@ void loop() {
         #ifndef DEBUG
         MIDI.sendPitchBend((double) pitch/127.0, MIDI_CHANNEL);
 
-        /* This is retarded. In theory, we don't need this line of code but
-         * there seems to be a bug in the MIDI library.
-         * Whatever... now it works.
-         */
-        MIDI.sendControlChange(0, 0, 1);
+        do_stuff_because_midi_lib_is_broken();
         #endif
 
         last_midi_pitch = pitch;
@@ -84,7 +99,7 @@ void loop() {
         // Aftertouch
         #ifndef DEBUG
         MIDI.sendPolyPressure(last_midi_note, velocity, MIDI_CHANNEL);
-        MIDI.sendControlChange(0, 0, 1);
+        do_stuff_because_midi_lib_is_broken();
         #endif
 
         last_midi_velocity = velocity;
@@ -103,7 +118,10 @@ void loop() {
     Serial.print(" with pitch ");
     Serial.print((int) last_midi_pitch);
     Serial.print(" with velocity ");
-    Serial.println((int) last_midi_velocity);
+    Serial.print((int) last_midi_velocity);
+    Serial.print(" (based on reading value : ");
+    Serial.print((int) potentiometer_reading);
+    Serial.println(")");
     #endif
 
     delay(40);
