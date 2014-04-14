@@ -2,7 +2,7 @@
 #include <math.h>
 #include "moving_average.h"
 
-#define DEBUG
+// #define DEBUG
 
 #define     FORCE_SENSOR_PIN    3
 #define     POTENTIOMETER_PIN   5
@@ -78,10 +78,8 @@ void indicative_lights(char pitch) {
 
     if(pitch <= TUNING_TOLERENCE) {
         brightness_exact = map(pitch, 0, TUNING_TOLERENCE, 0, 255);
-        Serial.print("EXACT !!!! ");
     } else if(pitch >= 32 - TUNING_TOLERENCE) {
         brightness_exact = map(pitch, TUNING_TOLERENCE, 31, 0, 255);
-        Serial.print("EXACT !!!! ");
     }
 
     if(pitch > 16) {
