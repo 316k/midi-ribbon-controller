@@ -2,18 +2,25 @@
 #include <math.h>
 #include "moving_average.h"
 
-// #define DEBUG
+#define DEBUG
 
-#define     FORCE_SENSOR_PIN 3
-#define     POTENTIOMETER_PIN 5
-#define     OCTAVE_PIN 4
-#define     MIDI_PITCHBEND_MIN   -8192.0
-#define     MIDI_PITCHBEND_MAX   8191.0
+#define     FORCE_SENSOR_PIN    3
+#define     POTENTIOMETER_PIN   5
+#define     OCTAVE_PIN          4
+#define     MIDI_PITCHBEND_MIN  -8192.0
+#define     MIDI_PITCHBEND_MAX  8191.0
+
+#define     LED_TOO_HIGH_PIN    11
+#define     LED_EXACT_PIN       10
+#define     LED_TOO_LOW_PIN     9
 
 /* If the potentiometer reading is greater than
  * MovingAverage plus/minus this value, the average is reset
  */
 #define     PORTAMENTO_TOLERENCE 90
+
+// This value is used in indicative_lights()
+#define     TUNING_TOLERENCE     4
 
 // Number of notes in range
 #define     RANGE       24
@@ -31,15 +38,11 @@ char note;
 int pitch;
 char octave = 4;
 
-/* This is retarded. In theory, we don't need this line of code but
- * there seems to be a bug in the MIDI library.
- * Whatever... now it works.
- */
-void do_stuff_because_midi_lib_is_broken() {
-    MIDI.sendControlChange(0, 0, 1);
-}
-
 void setup() {
+    pinMode(LED_TOO_HIGH_PIN, OUTPUT);
+    pinMode(LED_EXACT_PIN, OUTPUT);
+    pinMode(LED_TOO_LOW_PIN, OUTPUT);
+
     #ifdef DEBUG
     Serial.begin(9600);
     #else
@@ -49,7 +52,54 @@ void setup() {
     #endif
 }
 
+/* This is retarded. In theory, we don't need this line of code but
+ * there seems to be a bug in the MIDI library.
+ * Whatever... now it works.
+ */
+void do_stuff_because_midi_lib_is_broken() {
+    MIDI.sendControlChange(0, 0, 1);
+}
+
+/**
+ * 
+ *
+ * @param pitch The pitch value of the current note
+ */
+void indicative_lights(char pitch) {
+    char brightness_high = 0;
+    char brightness_exact = 0;
+    char brightness_low = 0;
+
+    pitch %= 32; //00011111;
+
+    if(pitch < 16) {
+        brightness_high = map(pitch, 0, 15, 0, 255);
+    }
+
+    if(pitch <= TUNING_TOLERENCE) {
+        brightness_exact = map(pitch, 0, TUNING_TOLERENCE, 0, 255);
+        Serial.print("EXACT !!!! ");
+    } else if(pitch >= 32 - TUNING_TOLERENCE) {
+        brightness_exact = map(pitch, TUNING_TOLERENCE, 31, 0, 255);
+        Serial.print("EXACT !!!! ");
+    }
+
+    if(pitch > 16) {
+        brightness_low = map(pitch, 17, 31, 0, 255);
+    }
+
+    analogWrite(LED_TOO_HIGH_PIN, (int) brightness_high);
+    analogWrite(LED_EXACT_PIN, (int) brightness_exact);
+    analogWrite(LED_TOO_LOW_PIN, (int) brightness_low);
+
+    #ifdef DEBUG
+    Serial.print("Pitch : ");
+    Serial.print((int) pitch);
+    #endif
+}
+
 void loop() {
+
     velocity = map(analogRead(FORCE_SENSOR_PIN), 0, 1000, 0, 127);
     velocity = velocity > 4 ? velocity : 0; // Force sensor uncertainty
 
@@ -113,6 +163,9 @@ void loop() {
         last_midi_note = -1;
         last_midi_velocity = 0;
     }
+
+    indicative_lights(pitch);
+
 
     #ifdef DEBUG
     Serial.print("Playing note #");
