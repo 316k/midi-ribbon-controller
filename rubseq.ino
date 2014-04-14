@@ -4,10 +4,11 @@
 
 // #define DEBUG
 
-#define     FORCE_SENSOR_PIN 0
+#define     FORCE_SENSOR_PIN 3
 #define     POTENTIOMETER_PIN 5
-#define 	MIDI_PITCHBEND_MIN   -8192.0
-#define 	MIDI_PITCHBEND_MAX   8191.0
+#define     OCTAVE_PIN 4
+#define     MIDI_PITCHBEND_MIN   -8192.0
+#define     MIDI_PITCHBEND_MAX   8191.0
 
 /* If the potentiometer reading is greater than
  * MovingAverage plus/minus this value, the average is reset
@@ -71,6 +72,7 @@ void loop() {
     pitch = 127 / 2 * (potentiometer_reading * (RANGE / 1023.0) - note) + 127 / 2;
 
     // Transpose on the right octave
+    octave = map(analogRead(OCTAVE_PIN), 0, 1023, 0, 8);
     note += 12 * octave;
 
     if(velocity && pitch != last_midi_pitch) {
