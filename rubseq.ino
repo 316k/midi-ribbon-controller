@@ -2,6 +2,7 @@
 #include <math.h>
 #include "moving_average.h"
 
+// Uncomment this line to dump values through Serial
 // #define DEBUG
 
 #define     FORCE_SENSOR_PIN    3
@@ -10,14 +11,17 @@
 #define     MIDI_PITCHBEND_MIN  -8192.0
 #define     MIDI_PITCHBEND_MAX  8191.0
 
-#define     LED_TOO_HIGH_PIN    11
-#define     LED_EXACT_PIN       10
-#define     LED_TOO_LOW_PIN     9
+#define     LED_1               11
+#define     LED_2               10
+#define     LED_3               9
 
 /* If the potentiometer reading is greater than
  * MovingAverage plus/minus this value, the average is reset
  */
-#define     PORTAMENTO_TOLERENCE 90
+#define     PORTAMENTO_TOLERENCE    90
+
+// Minimumn value for a valid force sensor reading
+#define     FORCE_SENSOR_TOLERENCE  20
 
 // This value is used in indicative_lights()
 #define     TUNING_TOLERENCE     4
@@ -37,20 +41,8 @@ MovingAverage potentiometer_reading_average;
 char note;
 int pitch;
 char octave = 4;
+char last_octave = 4;
 
-void setup() {
-    pinMode(LED_TOO_HIGH_PIN, OUTPUT);
-    pinMode(LED_EXACT_PIN, OUTPUT);
-    pinMode(LED_TOO_LOW_PIN, OUTPUT);
-
-    #ifdef DEBUG
-    Serial.begin(9600);
-    #else
-    MIDI.begin();
-    // All Notes Off
-    MIDI.sendControlChange(123, 0, MIDI_CHANNEL);
-    #endif
-}
 
 /* This is retarded. In theory, we don't need this line of code but
  * there seems to be a bug in the MIDI library.
@@ -63,49 +55,62 @@ void do_stuff_because_midi_lib_is_broken() {
 /**
  * 
  *
- * @param pitch The pitch value of the current note
+ * @param octave The current octave
  */
-void indicative_lights(char pitch) {
-    char brightness_high = 0;
-    char brightness_exact = 0;
-    char brightness_low = 0;
+void indicative_lights(char octave) {
 
-    pitch %= 32; //00011111;
-
-    if(pitch < 16) {
-        brightness_high = map(pitch, 0, 15, 0, 255);
-    }
-
-    if(pitch <= TUNING_TOLERENCE) {
-        brightness_exact = map(pitch, 0, TUNING_TOLERENCE, 0, 255);
-    } else if(pitch >= 32 - TUNING_TOLERENCE) {
-        brightness_exact = map(pitch, TUNING_TOLERENCE, 31, 0, 255);
-    }
-
-    if(pitch > 16) {
-        brightness_low = map(pitch, 17, 31, 0, 255);
-    }
-
-    analogWrite(LED_TOO_HIGH_PIN, (int) brightness_high);
-    analogWrite(LED_EXACT_PIN, (int) brightness_exact);
-    analogWrite(LED_TOO_LOW_PIN, (int) brightness_low);
+    digitalWrite(LED_1, (octave & 1 ? HIGH : LOW));
+    digitalWrite(LED_2, (octave & 2 ? HIGH : LOW));
+    digitalWrite(LED_3, (octave & 4 ? HIGH : LOW));
 
     #ifdef DEBUG
-    Serial.print("Pitch : ");
-    Serial.print((int) pitch);
+    Serial.print("Current octave & values : ");
+    Serial.print((int) octave);
+    Serial.print(" ");
+    Serial.print( ((octave & 1)));
+    Serial.print(" ");
+    Serial.print((int) ((octave & 2)));
+    Serial.print(" ");
+    Serial.print((int) ((octave & 4)));
+    Serial.print(" ");
+    #endif
+}
+
+void setup() {
+    pinMode(LED_1, OUTPUT);
+    pinMode(LED_2, OUTPUT);
+    pinMode(LED_3, OUTPUT);
+
+    indicative_lights(octave);
+
+    #ifdef DEBUG
+    Serial.begin(9600);
+    #else
+    MIDI.begin();
+    // All Notes Off
+    MIDI.sendControlChange(123, 0, MIDI_CHANNEL);
     #endif
 }
 
 void loop() {
 
     velocity = map(analogRead(FORCE_SENSOR_PIN), 0, 1000, 0, 127);
-    velocity = velocity > 4 ? velocity : 0; // Force sensor uncertainty
+    velocity = velocity > FORCE_SENSOR_TOLERENCE ? velocity : 0; // Force sensor uncertainty
 
     potentiometer_reading = analogRead(POTENTIOMETER_PIN);
 
     // Zero values aren't welcomed in MovingAverage class
     if(!potentiometer_reading) {
         return;
+    }
+
+    // Read current octave and display on indicative lights
+    octave = map(analogRead(OCTAVE_PIN), 0, 1023, 0, 8);
+
+    // Update lights
+    if(octave != last_octave) {
+        indicative_lights(octave);
+        last_octave = octave;
     }
 
     if(potentiometer_reading > potentiometer_reading_average.average() + PORTAMENTO_TOLERENCE ||
@@ -120,7 +125,6 @@ void loop() {
     pitch = 127 / 2 * (potentiometer_reading * (RANGE / 1023.0) - note) + 127 / 2;
 
     // Transpose on the right octave
-    octave = map(analogRead(OCTAVE_PIN), 0, 1023, 0, 8);
     note += 12 * octave;
 
     if(velocity && pitch != last_midi_pitch) {
@@ -162,9 +166,6 @@ void loop() {
         last_midi_velocity = 0;
     }
 
-    indicative_lights(pitch);
-
-
     #ifdef DEBUG
     Serial.print("Playing note #");
     Serial.print((int) last_midi_note);
@@ -177,6 +178,6 @@ void loop() {
     Serial.println(")");
     #endif
 
-    delay(40);
+    delay(10);
 }
 
