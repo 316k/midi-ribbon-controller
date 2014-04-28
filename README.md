@@ -1,4 +1,6 @@
-rubseq
+midi-ribbon-controller
 ======
 
-A midi instrument and sequencer made with an arduino microcontroller.
+A midi instrument made with an arduino microcontroller.
+
+More documentation to come. In the meantime, you can contact us directly at 316k [ät] legtux [döt] org.
