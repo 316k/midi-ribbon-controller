@@ -24,7 +24,7 @@ Note that items with a * can be bought at any electronic store for a really chea
 
 #### Stuff you probably have if you already use MIDI instruments :
 0. A midi cable (or MIDI to USB, if you want to plug it on your computer) - Since this is a MIDI instrument, it doesn't produce any sound by itself.
-1. A MIDI synthesizer. It can be a software synthesizer (such as [ZynAddSubFX](https://en.wikipedia.org/wiki/ZynAddSubFX) under GNU/Linux, OS X and Windows), or a hardware syntetiser (such as [Llammas](https://github.com/adelrune/Llammas), the Arduino MIDI synthesizer we developped along with this project).
+1. A MIDI synthesizer. It can be a software synthesizer (such as [ZynAddSubFX](https://en.wikipedia.org/wiki/ZynAddSubFX) under GNU/Linux, OS X and Windows), or a hardware syntetiser (such as [Llammas](https://github.com/adelrune/Llammas), the Arduino MIDI synthesizer we developped along with this project). In all cases, the legato mode should be supported, in order to avoid audio 'clicks' on note change.
 
 ### Assembling
 
